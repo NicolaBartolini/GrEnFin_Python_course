@@ -117,25 +117,14 @@ def vol_filter(p, q, rt, mu, omega, alphas, phis):
     return sigma_square, eps
 
 
-def garch_predict(p, q, sigma_square0, eps0, mu, omega, alphas, phis, n_steps=1):
+def garch_predict_one_step(p, q, sigma_square0, eps0, mu, omega, alphas, phis):
     
-    rt = np.empty(n_steps)
-    vol = np.empty(q + n_steps)
-    vol[:q] = sigma_square0
+    rt = mu
+    vol = np.empty(1)
+   
+    vol = omega + np.sum(alphas[0:p]*eps0) + np.sum(phis*sigma_square0)
     
-    rt[0] = mu 
-    vol[0] = omega + np.sum(alphas*eps0**2, axis=0) + np.sum(phis*vol[0: q], axis=0)
-    
-    n = min(p,q)
-    
-    if n_steps>1:
-        
-        for i in range(1, n_steps):
-            
-            rt[i] = mu 
-            vol[i] = omega + np.sum(alphas[0:n]*vol[i-n: i], axis=0) + np.sum(phis*vol[i-q: i], axis=0)
-    
-    return rt, vol
+    return rt, max(vol, 1e-6)
     
 
 def garch_loglike(rt, p, q, mu=0, omega=0, alphas=0, phis=0, sigma_square0=0.0001, DoF=4, density='normal'):
@@ -264,7 +253,7 @@ def fit(params, rt, p, q, density, method='BFGS'):
     if density=='t' or density=='student-t':
         DoF = np.exp(res.x[-2])
     
-    index = ['mu']
+    index = ['mu','omega']
     for i in range(0, p):
         index.append('alpha_'+str(i+1))
         
@@ -276,7 +265,7 @@ def fit(params, rt, p, q, density, method='BFGS'):
     
     index.append('sigma_square0')
 
-    params_result = np.array([mu])
+    params_result = np.array([mu, omega])
     
     if density=='t' or density=='student-t':
         params_result = np.hstack((params_result, alphas, phis, np.array([DoF, sigma_square0])))
