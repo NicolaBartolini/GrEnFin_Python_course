@@ -93,7 +93,8 @@ def garch_simulate(p, q, r0, sigma_square0, mu, omega, alphas, phis, n_steps, Do
 
     for i in range(m, n_steps):
         eps[i] = np.random.normal(0, 1, (1,N))
-        sigma_square[i] = omega + np.sum(alphas*eps[i-p:i]**2, axis=0) + np.sum(phis*sigma_square[i-q:i], axis=0)
+        z = rt[i-p:i] - mu
+        sigma_square[i] = omega + np.sum(alphas*z**2, axis=0) + np.sum(phis*sigma_square[i-q:i], axis=0)
         rt[i,:] = mu + np.sqrt(sigma_square[i]) * eps[i]
 
     return rt, sigma_square
@@ -110,7 +111,8 @@ def vol_filter(p, q, rt, mu, omega, alphas, phis):
     
     for i in range(m, len(rt)):
         
-        sigma_square[i] = omega + np.sum(alphas*eps[i-p:i]**2) + np.sum(phis*sigma_square[i-q:i], axis=0)
+        z = rt[i-p:i] - mu
+        sigma_square[i] = omega + np.sum(alphas*z**2, axis=0) + np.sum(phis*sigma_square[i-q:i], axis=0)
         
         eps[i] = (rt[i] - mu) / np.sqrt(sigma_square[i])
         
@@ -147,7 +149,8 @@ def garch_loglike(rt, p, q, mu=0, omega=0, alphas=0, phis=0, sigma_square0=0.000
     
     for i in range(m,len(rt)):
                         
-        sigma_square[i] = omega + np.sum(alphas*eps[i-p:i]**2) + np.sum(phis*sigma_square[i-q:i], axis=0)
+        z = rt[i-p:i] - mu
+        sigma_square[i] = omega + np.sum(alphas*z**2, axis=0) + np.sum(phis*sigma_square[i-q:i], axis=0)
         min_sigma = 1e-8
         sigma_square[i] = max(sigma_square[i], min_sigma)
         
